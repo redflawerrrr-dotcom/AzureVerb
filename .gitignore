@@ -1,0 +1,8 @@
+build/
+*.component
+*.vst3
+*.zip
+*.dSYM/
+.DS_Store
+.idea/
+cmake-build-*/
