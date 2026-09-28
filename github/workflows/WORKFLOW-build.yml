@@ -1,23 +1,35 @@
 name: Build Azure Verb
+
 on:
   push:
   workflow_dispatch:
+
 jobs:
   build-mac:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
+
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+        run: |
+          cmake -B build -G Xcode \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+
       - name: Build
         run: cmake --build build --config Release -j 4
+
       - name: Package
+        shell: bash
         run: |
+          set -e
           mkdir -p package
-          find build -maxdepth 5 -type d -name "*.component" -exec cp -R {} package/ \;
-          find build -maxdepth 5 -type d -name "*.vst3" -exec cp -R {} package/ \;
+          find build -type d -name "*.component" -exec cp -R {} package/ \;
+          find build -type d -name "*.vst3" -exec cp -R {} package/ \;
+          test -n "$(find package -mindepth 1 -maxdepth 1 -print -quit)"
           for f in package/*; do codesign --force --deep -s - "$f"; done
-          cd package && zip -r -y ../AzureVerb-mac.zip . && cd ..
+          cd package && zip -r -y ../AzureVerb-mac.zip .
+
       - uses: actions/upload-artifact@v4
         with:
           name: AzureVerb-mac
